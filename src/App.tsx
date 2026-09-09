@@ -6,6 +6,7 @@ import { statusLabels, taskStatuses, transitionTaskStatus, type Task, type TaskD
 import { createTask, loadLocalTasks, saveLocalTasks } from './data/localTasks';
 import { getSignedInProfile, loadSupabaseTasks, saveSupabaseTask, subscribeSupabaseTasks, type WorkspaceProfile } from './data/supabaseTasks';
 import { hasSupabaseConfig, supabase } from './lib/supabase';
+import QuickCaptureResilient from './components/QuickCapture';
 
 const statusOrder: TaskStatus[] = ['idea', 'planned', 'in_progress', 'waiting', 'done'];
 const cardDifficulty: Record<TaskDifficulty, string> = { easy: 'Leve', medium: 'Média', hard: 'Alta' };
@@ -218,7 +219,7 @@ export default function App() {
   const [profile, setProfile] = useState<WorkspaceProfile | null>(null);
   const [authChecked, setAuthChecked] = useState(!hasSupabaseConfig);
   const [syncState, setSyncState] = useState(hasSupabaseConfig ? 'Conectando…' : 'Modo local');
-  const [scope, setScope] = useState<Scope>('today');
+  const [scope, setScope] = useState<Scope>('all');
   const [ownerFilter, setOwnerFilter] = useState<OwnerFilter>('all');
   const [search, setSearch] = useState('');
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -291,11 +292,12 @@ export default function App() {
     const task = createTask({ title: preview.title, description: preview.description ?? null, owner: preview.owner, status: preview.status, difficulty: preview.difficulty, estimatedMinutes: preview.estimatedMinutes ?? null, plannedFor: preview.plannedFor ?? preview.dueAt ?? null, dueAt: preview.dueAt ?? null, dependencyNote: preview.dependencyNote ?? null, sourceText: preview.sourceText, actualMinutes: null, tags: [], createdBy: currentUser });
     const previous = tasks;
     setTasks((current) => [task, ...current]);
+    setScope('all');
     if (hasSupabaseConfig) {
-      try { await saveSupabaseTask(task); setSyncState('Sincronizado'); }
-      catch { setTasks(previous); setNotice('Não foi possível criar a tarefa. Seu texto foi preservado para tentar novamente.'); throw new Error('save failed'); }
+      try { setSyncState('Salvando…'); await saveSupabaseTask(task); setSyncState('Sincronizado'); }
+      catch { setTasks(previous); setSyncState('Reconectando…'); setNotice('Não foi possível criar a tarefa. Seu texto foi preservado para tentar novamente.'); throw new Error('save failed'); }
     }
-    setNotice('Tarefa criada.');
+    setNotice(hasSupabaseConfig ? 'Tarefa criada e salva.' : 'Tarefa criada.');
   }
 
   async function moveTask(task: Task, status: TaskStatus) {
@@ -334,7 +336,7 @@ export default function App() {
 
       <main className="workspace">
         <section className="hero-row"><div><span className="eyebrow">VISÃO DO TRABALHO</span><h2>O que precisa andar agora?</h2><p>Fale, digite, arraste. O painel organiza o resto sem virar mais um sistema complicado.</p></div><div className="scope-tabs" aria-label="Período">{([['today', 'Hoje'], ['week', 'Esta semana'], ['all', 'Tudo']] as const).map(([value, label]) => <button key={value} className={scope === value ? 'active' : ''} onClick={() => setScope(value)}>{label}</button>)}</div></section>
-        <QuickCapture currentUser={currentUser} onCreate={createFromPreview} inputRef={quickInputRef} />
+        <QuickCaptureResilient currentUser={currentUser} onCreate={createFromPreview} inputRef={quickInputRef} />
         <section className="summary-strip">
           <button onClick={() => setScope('today')}><span className="summary-icon red">!</span><div><strong>{summary.today}</strong><small>pra hoje</small></div></button>
           <button onClick={() => setScope('week')}><span className="summary-icon amber">◷</span><div><strong>{summary.week}</strong><small>esta semana</small></div></button>
