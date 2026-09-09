@@ -62,7 +62,8 @@ async function profileId(slug: TaskOwner) {
 }
 
 export async function saveSupabaseTask(task: Task) {
-  if (!supabase) return;
+  const client = supabase;
+  if (!client) return;
   await retryAsync(async () => {
     const [ownerId, creatorId] = await Promise.all([profileId(task.owner), profileId(task.createdBy)]);
     const payload = {
@@ -83,7 +84,7 @@ export async function saveSupabaseTask(task: Task) {
       created_by: creatorId,
       sort_order: task.sortOrder,
     };
-    const { error } = await supabase.from(TASK_TABLE).upsert(payload);
+    const { error } = await client.from(TASK_TABLE).upsert(payload);
     if (error) throw error;
   });
 }
