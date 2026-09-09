@@ -1,0 +1,37 @@
+{
+  "name": "agendamentos",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "typecheck": "tsc -b --pretty false",
+    "test": "vitest",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@dnd-kit/core": "6.3.1",
+    "@dnd-kit/sortable": "10.0.0",
+    "@supabase/supabase-js": "2.116.0",
+    "date-fns": "4.4.0",
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
+    "zod": "4.5.4"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "4.3.3",
+    "@testing-library/dom": "latest",
+    "@testing-library/jest-dom": "latest",
+    "@testing-library/react": "16.3.3",
+    "@testing-library/user-event": "latest",
+    "@types/react": "latest",
+    "@types/react-dom": "latest",
+    "@vitejs/plugin-react": "6.1.1",
+    "jsdom": "latest",
+    "tailwindcss": "4.3.3",
+    "typescript": "5.8.3",
+    "vite": "8.2.2",
+    "vitest": "5.0.0"
+  }
+}
