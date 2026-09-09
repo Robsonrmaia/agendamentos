@@ -1,5 +1,6 @@
 import type { RealtimeChannel } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
+import { retryAsync } from '../lib/retry';
 import { taskSchema, type Task, type TaskOwner } from '../domain/task';
 
 const PROFILE_TABLE = 'tarefas_pessoais_profiles';
@@ -62,27 +63,29 @@ async function profileId(slug: TaskOwner) {
 
 export async function saveSupabaseTask(task: Task) {
   if (!supabase) return;
-  const [ownerId, creatorId] = await Promise.all([profileId(task.owner), profileId(task.createdBy)]);
-  const payload = {
-    id: task.id,
-    title: task.title,
-    description: task.description,
-    owner_id: ownerId,
-    status: task.status,
-    difficulty: task.difficulty,
-    estimated_minutes: task.estimatedMinutes,
-    planned_for: task.plannedFor,
-    due_at: task.dueAt,
-    dependency_note: task.dependencyNote,
-    source_text: task.sourceText,
-    actual_minutes: task.actualMinutes,
-    tags: task.tags,
-    completed_at: task.completedAt,
-    created_by: creatorId,
-    sort_order: task.sortOrder,
-  };
-  const { error } = await supabase.from(TASK_TABLE).upsert(payload);
-  if (error) throw error;
+  await retryAsync(async () => {
+    const [ownerId, creatorId] = await Promise.all([profileId(task.owner), profileId(task.createdBy)]);
+    const payload = {
+      id: task.id,
+      title: task.title,
+      description: task.description,
+      owner_id: ownerId,
+      status: task.status,
+      difficulty: task.difficulty,
+      estimated_minutes: task.estimatedMinutes,
+      planned_for: task.plannedFor,
+      due_at: task.dueAt,
+      dependency_note: task.dependencyNote,
+      source_text: task.sourceText,
+      actual_minutes: task.actualMinutes,
+      tags: task.tags,
+      completed_at: task.completedAt,
+      created_by: creatorId,
+      sort_order: task.sortOrder,
+    };
+    const { error } = await supabase.from(TASK_TABLE).upsert(payload);
+    if (error) throw error;
+  });
 }
 
 export function subscribeSupabaseTasks(onChange: () => void): RealtimeChannel | null {
