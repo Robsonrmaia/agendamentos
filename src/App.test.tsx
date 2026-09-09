@@ -24,4 +24,9 @@ describe('Agendamentos', () => {
     expect(await screen.findByText(/4h/)).toBeInTheDocument();
     expect(screen.getByText(/difícil/i)).toBeInTheDocument();
   });
+
+  it('abre em Tudo para não esconder tarefas futuras ou sem data', () => {
+    render(<App />);
+    expect(screen.getByRole('button', { name: 'Tudo' })).toHaveClass('active');
+  });
 });
