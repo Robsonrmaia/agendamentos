@@ -30,17 +30,17 @@ describe('Supabase storage isolation', () => {
     const select = vi.fn(() => ({ eq }));
 
     mocks.from.mockImplementation((table: string) => {
-      if (table !== 'agendamento_profiles') {
+      if (table !== 'tarefas_pessoais_profiles') {
         throw new Error(`Tabela inesperada: ${table}`);
       }
       return { select };
     });
   });
 
-  it('resolve o usuário somente pela tabela exclusiva do Agendamentos', async () => {
+  it('resolve o usuário somente pelo namespace de tarefas pessoais', async () => {
     const profile = await getSignedInProfile();
 
-    expect(mocks.from).toHaveBeenCalledWith('agendamento_profiles');
+    expect(mocks.from).toHaveBeenCalledWith('tarefas_pessoais_profiles');
     expect(profile).toEqual({
       id: 'profile-robson',
       slug: 'robson',
