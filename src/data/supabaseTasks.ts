@@ -2,6 +2,9 @@ import type { RealtimeChannel } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
 import { taskSchema, type Task, type TaskOwner } from '../domain/task';
 
+const PROFILE_TABLE = 'agendamento_profiles';
+const TASK_TABLE = 'agendamento_tasks';
+
 export type WorkspaceProfile = { id: string; slug: TaskOwner; displayName: string };
 
 function fromRow(row: any): Task {
@@ -31,7 +34,7 @@ export async function getSignedInProfile(): Promise<WorkspaceProfile | null> {
   if (!supabase) return null;
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return null;
-  const { data, error } = await supabase.from('profiles').select('id, slug, display_name').eq('id', user.id).single();
+  const { data, error } = await supabase.from(PROFILE_TABLE).select('id, slug, display_name').eq('auth_user_id', user.id).single();
   if (error || !data) return null;
   return { id: data.id, slug: data.slug as TaskOwner, displayName: data.display_name };
 }
@@ -39,8 +42,8 @@ export async function getSignedInProfile(): Promise<WorkspaceProfile | null> {
 export async function loadSupabaseTasks(): Promise<Task[]> {
   if (!supabase) return [];
   const { data, error } = await supabase
-    .from('tasks')
-    .select('*, owner_profile:profiles!tasks_owner_id_fkey(slug), creator_profile:profiles!tasks_created_by_fkey(slug)')
+    .from(TASK_TABLE)
+    .select('*, owner_profile:agendamento_profiles!agendamento_tasks_owner_id_fkey(slug), creator_profile:agendamento_profiles!agendamento_tasks_created_by_fkey(slug)')
     .order('sort_order', { ascending: true });
   if (error) throw error;
   return (data ?? []).map(fromRow);
@@ -48,7 +51,7 @@ export async function loadSupabaseTasks(): Promise<Task[]> {
 
 async function profileId(slug: TaskOwner) {
   if (!supabase) throw new Error('Supabase não configurado');
-  const { data, error } = await supabase.from('profiles').select('id').eq('slug', slug).single();
+  const { data, error } = await supabase.from(PROFILE_TABLE).select('id').eq('slug', slug).single();
   if (error || !data) throw error ?? new Error(`Perfil ${slug} não encontrado`);
   return data.id as string;
 }
@@ -74,11 +77,14 @@ export async function saveSupabaseTask(task: Task) {
     created_by: creatorId,
     sort_order: task.sortOrder,
   };
-  const { error } = await supabase.from('tasks').upsert(payload);
+  const { error } = await supabase.from(TASK_TABLE).upsert(payload);
   if (error) throw error;
 }
 
 export function subscribeSupabaseTasks(onChange: () => void): RealtimeChannel | null {
   if (!supabase) return null;
-  return supabase.channel('agendamentos-tasks').on('postgres_changes', { event: '*', schema: 'public', table: 'tasks' }, onChange).subscribe();
+  return supabase
+    .channel('agendamentos-tasks')
+    .on('postgres_changes', { event: '*', schema: 'public', table: TASK_TABLE }, onChange)
+    .subscribe();
 }
