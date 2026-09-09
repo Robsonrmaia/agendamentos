@@ -1,5 +1,5 @@
-export const VOICE_SILENCE_MS = 10_000;
-export const VOICE_MAX_MS = 90_000;
+export const VOICE_SILENCE_MS = 12_000;
+export const VOICE_MAX_MS = 120_000;
 
 export function configureRecognition(recognition: { lang?: string; continuous?: boolean; interimResults?: boolean }) {
   recognition.lang = 'pt-BR';
